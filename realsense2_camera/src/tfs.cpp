@@ -175,6 +175,7 @@ void BaseRealSenseNode::calcAndAppendTransformMsgs(const rs2::stream_profile& pr
 
     float3 trans{tf_ex.translation[0], tf_ex.translation[1], tf_ex.translation[2]};
 
+#ifdef RS2_STREAM_SAFETY
     if(profile.stream_type() == RS2_STREAM_LABELED_POINT_CLOUD ||
        profile.stream_type() == RS2_STREAM_OCCUPANCY)
     {
@@ -193,6 +194,7 @@ void BaseRealSenseNode::calcAndAppendTransformMsgs(const rs2::stream_profile& pr
     }
     else
     {
+#endif
         // Rotation order is important (start from left to right):
         // 1. quaternion_optical.inverse() [ROS -> Optical]
         // 2. Q [Optical -> Optical] (usually no rotation, but might be very small rotations between sensors, like from Depth to Color)
@@ -203,7 +205,9 @@ void BaseRealSenseNode::calcAndAppendTransformMsgs(const rs2::stream_profile& pr
 
         // Also here, the translation vector is in the Optical CS, and we convert it to ROS CS inside append_static_tf_msg
         append_static_tf_msg(transform_ts_, trans, Q, BASE_FRAME_ID, FRAME_ID(sip));
+#ifdef RS2_STREAM_SAFETY
     }
+#endif
 
     // Transform stream frame from ROS CS to optical CS and publish it
     // We are using zero translation vector here, since no translation between frame and optical_frame, but only rotation

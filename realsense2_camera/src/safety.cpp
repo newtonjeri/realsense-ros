@@ -14,6 +14,8 @@
 
 #include "../include/base_realsense_node.h"
 
+#ifdef RS2_STREAM_SAFETY
+
 using namespace realsense2_camera;
 using namespace rs2;
 
@@ -205,3 +207,5 @@ void BaseRealSenseNode::HardwareMonitorCommandSendService(const realsense2_camer
         res->error_message = std::string("Error sending hardware monitor command: ") + e.what();
     }
 }
+
+#endif // RS2_STREAM_SAFETY

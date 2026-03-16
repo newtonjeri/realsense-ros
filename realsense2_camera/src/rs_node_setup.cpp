@@ -85,7 +85,9 @@ void BaseRealSenseNode::monitoringProfileChanges()
 void BaseRealSenseNode::setAvailableSensors()
 {
     _dev_sensors = _dev.query_sensors();
+#ifdef RS2_STREAM_SAFETY
     setSafetySensorIfAvailable();
+#endif
 
     if (!_json_file_path.empty())
     {
@@ -167,9 +169,12 @@ void BaseRealSenseNode::setAvailableSensors()
         const std::string module_name(rs2_to_ros(sensor.get_info(RS2_CAMERA_INFO_NAME)));
         std::unique_ptr<RosSensor> rosSensor;
         if (sensor.is<rs2::depth_sensor>() ||
-            sensor.is<rs2::color_sensor>() ||
-            sensor.is<rs2::safety_sensor>() ||
-            sensor.is<rs2::depth_mapping_sensor>())
+            sensor.is<rs2::color_sensor>()
+#ifdef RS2_STREAM_SAFETY
+            || sensor.is<rs2::safety_sensor>()
+            || sensor.is<rs2::depth_mapping_sensor>()
+#endif
+            )
         {
             ROS_DEBUG_STREAM("Set " << module_name << " as VideoSensor.");
             rosSensor = std::make_unique<RosSensor>(sensor, _parameters, frame_callback_function, update_sensor_func, hardware_reset_func, _diagnostics_updater, _logger, _use_intra_process, _dev.is<playback>());
@@ -208,10 +213,12 @@ void BaseRealSenseNode::stopPublishers(const std::vector<stream_profile>& profil
             _info_publishers.erase(sip);
             _depth_aligned_image_publishers.erase(sip);
             _depth_aligned_info_publisher.erase(sip);
+#ifdef RS2_STREAM_SAFETY
             if(profile.stream_type() == RS2_STREAM_LABELED_POINT_CLOUD && _labeled_pointcloud_publisher)
             {
                 _labeled_pointcloud_publisher.reset();
             }
+#endif
         }
         else if (profile.is<rs2::motion_stream_profile>())
         {
@@ -249,6 +256,7 @@ void BaseRealSenseNode::startPublishers(const std::vector<stream_profile>& profi
             else if (profile.stream_type() == RS2_STREAM_DEPTH)
                 _is_depth_enabled = true;
 
+#ifdef RS2_STREAM_SAFETY
             if (profile.stream_type() == RS2_STREAM_OCCUPANCY)
             {
                 // special handling for occupancy stream, since it is a topic of nav_msgs/msg/GridCells messages
@@ -264,6 +272,7 @@ void BaseRealSenseNode::startPublishers(const std::vector<stream_profile>& profi
                     rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos),qos));
             }
             else
+#endif
             {
                 std::stringstream image_raw, camera_info;
                 // Depth stream is rectified, Color is unrectified
@@ -585,10 +594,12 @@ void BaseRealSenseNode::publishServices()
                         realsense2_camera_msgs::srv::CalibConfigWrite::Response::SharedPtr res)
                         {CalibConfigWriteService(req, res);});
 
+#ifdef RS2_STREAM_SAFETY
     if(_safety_sensor)
     {
         publishSafetyServices();
     }
+#endif
 
 }
 

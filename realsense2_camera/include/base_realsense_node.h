@@ -73,10 +73,12 @@
 #include <thread>
 
 //Safety Camera
+#ifdef RS2_STREAM_SAFETY
 #include "realsense2_camera_msgs/srv/safety_preset_read.hpp"
 #include "realsense2_camera_msgs/srv/safety_preset_write.hpp"
 #include "realsense2_camera_msgs/srv/safety_interface_config_read.hpp"
 #include "realsense2_camera_msgs/srv/safety_interface_config_write.hpp"
+#endif
 
 using realsense2_camera_msgs::msg::Extrinsics;
 using realsense2_camera_msgs::msg::IMUInfo;
@@ -213,6 +215,7 @@ namespace realsense2_camera
         void setup();
 
         //Safety Camera
+#ifdef RS2_STREAM_SAFETY
         rclcpp::Service<realsense2_camera_msgs::srv::SafetyPresetRead>::SharedPtr _safety_preset_read_srv;
         rclcpp::Service<realsense2_camera_msgs::srv::SafetyPresetWrite>::SharedPtr _safety_preset_write_srv;
         rclcpp::Service<realsense2_camera_msgs::srv::SafetyInterfaceConfigRead>::SharedPtr _safety_interface_config_read_srv;
@@ -235,6 +238,7 @@ namespace realsense2_camera
                                  realsense2_camera_msgs::srv::ApplicationConfigWrite::Response::SharedPtr res);
         void HardwareMonitorCommandSendService(const realsense2_camera_msgs::srv::HardwareMonitorCommandSend::Request::SharedPtr req,
                                  realsense2_camera_msgs::srv::HardwareMonitorCommandSend::Response::SharedPtr res);
+#endif
 
     private:
         class CimuData
@@ -273,8 +277,10 @@ namespace realsense2_camera
         void startDynamicTf();
         void publishDynamicTransforms();
         void publishPointCloud(rs2::points f, const rclcpp::Time& t, const rs2::frameset& frameset);
+#ifdef RS2_STREAM_SAFETY
         void publishOccupancyFrame(rs2::frame f, const rclcpp::Time& t);
         void publishLabeledPointCloud(rs2::labeled_points lpc, const rclcpp::Time& t);
+#endif
         bool shouldPublishCameraInfo(const stream_index_pair& sip);
         Extrinsics rsExtrinsicsToMsg(const rs2_extrinsics& extrinsics) const;
         IMUInfo getImuInfo(const rs2::stream_profile& profile);
@@ -371,8 +377,10 @@ namespace realsense2_camera
 
         bool _use_intra_process;      
         std::map<stream_index_pair, std::shared_ptr<image_publisher>> _image_publishers;
+#ifdef RS2_STREAM_SAFETY
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _labeled_pointcloud_publisher;
         rclcpp::Publisher<nav_msgs::msg::GridCells>::SharedPtr _occupancy_publisher;
+#endif
         std::map<stream_index_pair, rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> _imu_publishers;
         std::shared_ptr<SyncedImuPublisher> _synced_imu_publisher;
         std::map<stream_index_pair, rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr> _info_publishers;
@@ -426,9 +434,11 @@ namespace realsense2_camera
         rs2::stream_profile _base_profile;
 
         //Safety Camera
+#ifdef RS2_STREAM_SAFETY
         rs2::sensor* _safety_sensor;
         void setSafetySensorIfAvailable();
         void publishSafetyServices();
+#endif
 
 
 #if defined (ACCELERATE_GPU_WITH_GLSL)
