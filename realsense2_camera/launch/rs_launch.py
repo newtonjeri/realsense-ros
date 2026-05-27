@@ -118,10 +118,22 @@ def launch_setup(context, params, param_name_suffix=''):
     # Get list of supported parameters
     supported_params = set(param['name'] for param in configurable_parameters)
     
-    # Check for unsupported parameters in command line arguments
-    # Warn for any launch arguments not in supported_params
+    # Check for unsupported parameters in command line arguments.
+    # NOTE: context.launch_configurations contains ALL launch args from the entire launch
+    # context tree (including parent launch files like butterfli_real_hardware.launch.py).
+    # Iterating over all keys causes false-positive warnings for parent-scope args such as
+    # 'enable_camera', 'arm_mode', etc. that are not realsense parameters.
+    # Scope the check to args that use realsense-specific dot-notation prefixes so that
+    # only genuinely mistyped/unsupported realsense params are flagged.
+    _rs_prefixes = (
+        'depth_module.', 'rgb_camera.', 'pointcloud.', 'align_depth.',
+        'colorizer.', 'decimation_filter.', 'rotation_filter.',
+        'spatial_filter.', 'temporal_filter.', 'disparity_filter.',
+        'hole_filling_filter.', 'hdr_merge.', 'safety_camera.',
+        'depth_mapping_camera.',
+    )
     for param_name in context.launch_configurations.keys():
-        if param_name not in supported_params:
+        if param_name not in supported_params and param_name.startswith(_rs_prefixes):
             print(f"\033[33mWarning: Parameter '{param_name}' is not supported. Supported parameters are:\n{sorted(supported_params)}\033[0m")
     
     # Check for unsupported parameters in config file
